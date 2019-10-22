@@ -1,0 +1,41 @@
+version: '3'
+services:
+  reverse-proxy:
+    # The official v2.0 Traefik docker image
+    image: traefik:v2.0
+    # Enables the web UI and tells Traefik to listen to docker
+    command: --api.insecure=true --providers.docker
+    ports:
+      # The HTTP port
+      - "80:80"
+      # The Web UI (enabled by --api.insecure=true)
+      - "8080:8080"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+  recipesvc:
+    labels: 
+      - traefik.http.routers.recipesvc.rule=PathPrefix(`/recipe`)
+    container_name: recipe
+    build: ./RecipeSvc 
+    volumes:
+      - ./RecipeSvc:/usr/src/app
+    environment:
+      NODE_ENV: development
+    command: npm run dev
+  recipesvcdb:
+    image: mongo
+    container_name: recipe_mongo
+  commentsvc:
+    labels: 
+      - traefik.http.routers.commentsvc.rule=PathPrefix(`/comment`)
+    container_name: comment
+    build: ./CommentSvc
+    volumes:
+      - ./CommentSvc:/usr/src/app
+    environment:
+      NODE_ENV: development
+    command: npm run dev
+  commentsvcdb:
+    image: mongo
+    container_name: comment_mongo
